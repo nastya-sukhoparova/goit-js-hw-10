@@ -3,14 +3,14 @@ import "flatpickr/dist/flatpickr.min.css";
 import iziToast from "izitoast";
 import "izitoast/dist/css/iziToast.min.css";
 
-let userSelectedDate;
-
 const datePicker = document.getElementById('datetime-picker');
 const startBtn = document.getElementById('start-btn');
 const daysSpan = document.querySelector('[data-days]');
 const hoursSpan = document.querySelector('[data-hours]');
 const minutesSpan = document.querySelector('[data-minutes]');
 const secondsSpan = document.querySelector('[data-seconds]');
+let userSelectedDate;
+let countdownInterval;
 
 const options = {
   enableTime: true,
@@ -35,32 +35,37 @@ const options = {
 flatpickr(datePicker, options);
 
 startBtn.addEventListener('click', () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+
   startBtn.disabled = true;
   datePicker.disabled = true;
 
-  function updateTimer() {
-    const diff = userSelectedDate - new Date();
-    if (diff <= 0) {
-      clearInterval(intervalId);
+  countdownInterval = setInterval(() => {
+    const currentTime = new Date();
+    const timeDifference = userSelectedDate - currentTime;
+
+    if (timeDifference <= 0) {
+      clearInterval(countdownInterval);
+      iziToast.success({
+        title: 'Complete',
+        message: 'Countdown finished!',
+      });
       daysSpan.textContent = '00';
       hoursSpan.textContent = '00';
       minutesSpan.textContent = '00';
       secondsSpan.textContent = '00';
-      iziToast.info({
-        title: 'Done',
-        message: 'Countdown finished.',
-      });
       datePicker.disabled = false;
       return;
     }
-    const { days, hours, minutes, seconds } = convertMs(diff);
+
+    const { days, hours, minutes, seconds } = convertMs(timeDifference);
     daysSpan.textContent = addLeadingZero(days);
     hoursSpan.textContent = addLeadingZero(hours);
     minutesSpan.textContent = addLeadingZero(minutes);
     secondsSpan.textContent = addLeadingZero(seconds);
-  }
-
-  const intervalId = setInterval(updateTimer, 1000);
+  }, 1000);
 });
 
 function convertMs(ms) {
